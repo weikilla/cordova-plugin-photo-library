@@ -49,28 +49,32 @@ photoLibrary.getLibrary = function (success, error, options) {
   var chunksToProcess = []; // chunks are stored in its index
   var currentChunkNum = 0;
 
-  cordova.exec(
-    function (chunk) {
-      // callbacks arrive from cordova.exec not in order, restoring the order here
-      if (chunk.chunkNum === currentChunkNum) {
-        // the chunk arrived in order
-        q.push(chunk);
-        currentChunkNum += 1;
-        while (chunksToProcess[currentChunkNum]) {
-          q.push(chunksToProcess[currentChunkNum]);
-          delete chunksToProcess[currentChunkNum];
+  this.requestAuthorization(function () {
+    cordova.exec(
+      function (chunk) {
+        // callbacks arrive from cordova.exec not in order, restoring the order here
+        if (chunk.chunkNum === currentChunkNum) {
+          // the chunk arrived in order
+          q.push(chunk);
           currentChunkNum += 1;
+          while (chunksToProcess[currentChunkNum]) {
+            q.push(chunksToProcess[currentChunkNum]);
+            delete chunksToProcess[currentChunkNum];
+            currentChunkNum += 1;
+          }
+        } else {
+          // the chunk arrived not in order
+          chunksToProcess[chunk.chunkNum] = chunk;
         }
-      } else {
-        // the chunk arrived not in order
-        chunksToProcess[chunk.chunkNum] = chunk;
-      }
-    },
-    error,
-    'PhotoLibrary',
-    'getLibrary', [options]
-  );
-
+      },
+      error,
+      'PhotoLibrary',
+      'getLibrary', [options]
+    );
+  }, error, {
+    read: true,
+    write: false
+  });
 };
 
 photoLibrary.getAlbums = function (success, error) {
@@ -137,6 +141,8 @@ photoLibrary.getThumbnailURL = function (photoIdOrLibraryItem, success, error, o
     } else {
       if (window.WkWebView) {
         thumbnailURL = window.WkWebView.convertFilePath(thumbnailURL.replace("cdvphotolibrary://", "file://"));
+      } else if (typeof device !== "undefined" && device.platform === "Android") {
+        thumbnailURL = window.location.origin + "/cdvphotolibrary/thumbnail/" + urlParams;
       }
       success(thumbnailURL);
     }
@@ -170,6 +176,9 @@ photoLibrary.getPhotoURL = function (photoIdOrLibraryItem, success, error, optio
     } else {
       if (window.WkWebView) {
         photoURL = window.WkWebView.convertFilePath(photoURL.replace("cdvphotolibrary://", "file://"));
+        success(photoURL);
+      } else if (typeof device !== "undefined" && device.platform === "Android") {
+        photoURL = window.location.origin + "/cdvphotolibrary/photo/" + urlParams;
       }
       success(photoURL);
     }
