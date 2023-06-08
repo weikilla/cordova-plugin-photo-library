@@ -87,6 +87,43 @@ public class PhotoLibraryService {
 
   }
 
+  public ArrayList<JSONObject> getPhotosFromAlbum(Context context, String albumName) throws JSONException {
+
+    JSONObject columns = new JSONObject() {{
+      put("int.id", MediaStore.Images.Media._ID);
+      put("fileName", MediaStore.Images.ImageColumns.DISPLAY_NAME);
+      put("albumId", MediaStore.Images.ImageColumns.BUCKET_ID);
+      put("date.creationDate", MediaStore.Images.ImageColumns.DATE_TAKEN);
+      put("nativeURL", MediaStore.MediaColumns.DATA); // will not be returned to javascript
+    }};
+
+    String selection = MediaStore.Images.Media.BUCKET_DISPLAY_NAME + " = " + "\"" + albumName + "\"";
+
+    final ArrayList<JSONObject> queryResult = queryContentProvider(context, MediaStore.Images.Media.EXTERNAL_CONTENT_URI, columns, selection);
+
+    return queryResult;
+
+  }
+
+  public void deletePhotosFromAlbum(Context context, String albumName) throws JSONException {
+
+    ArrayList<String> photosNativePath = new ArrayList<>();
+    ArrayList<JSONObject> photosByAlbum = getPhotosFromAlbum(context, albumName);
+    for (JSONObject item : photosByAlbum) {
+      photosNativePath.add((String) item.get("nativeURL"));
+    }
+
+    for (String photoPath : photosNativePath) {
+      Uri photoUri = Uri.parse("file://" + photoPath);
+      context.getContentResolver().delete(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+        MediaStore.Images.Media.DATA + "=?", new String[]{photoPath});
+      File photoFile = new File(photoUri.getPath());
+      if (photoFile.exists()) {
+        photoFile.delete();
+      }
+    }
+  }
+
   public PictureData getThumbnail(Context context, String photoId, int thumbnailWidth, int thumbnailHeight, double quality) throws IOException {
 
     Bitmap bitmap = null;
@@ -201,18 +238,6 @@ public class PhotoLibraryService {
     saveMedia(context, cordova, url, album, imageMimeToExtension, new FilePathRunnable() {
       @Override
       public void run(String filePath) {
-//         try {
-//           // Find the saved image in the library and return it as libraryItem
-//           String whereClause = MediaStore.MediaColumns.DATA + " = \"" + filePath + "\"";
-//           queryLibrary(context, whereClause, new ChunkResultRunnable() {
-//             @Override
-//             public void run(ArrayList<JSONObject> chunk, int chunkNum, boolean isLastChunk) {
-//               completion.run(chunk.size() == 1 ? chunk.get(0) : null);
-//             }
-//           });
-//         } catch (Exception e) {
-//           completion.run(null);
-//         }
         JSONObject item = new JSONObject();
         completion.run(item);
       }
@@ -251,9 +276,13 @@ public class PhotoLibraryService {
       this.mimeType = mimeType;
     }
 
-    public InputStream getStream() { return this.stream; }
+    public InputStream getStream() {
+      return this.stream;
+    }
 
-    public String getMimeType() { return this.mimeType; }
+    public String getMimeType() {
+      return this.mimeType;
+    }
 
     private InputStream stream;
     private String mimeType;
@@ -353,7 +382,7 @@ public class PhotoLibraryService {
     long chunkStartTime = SystemClock.elapsedRealtime();
     int chunkNum = 0;
 
-    for (int i=0; i<queryResults.size(); i++) {
+    for (int i = 0; i < queryResults.size(); i++) {
       JSONObject queryResult = queryResults.get(i);
 
       // swap width and height if needed
@@ -370,7 +399,7 @@ public class PhotoLibraryService {
 
       // photoId is in format "imageid;imageurl"
       queryResult.put("id",
-          queryResult.get("id") + ";" +
+        queryResult.get("id") + ";" +
           queryResult.get("nativeURL"));
 
       queryResult.remove("nativeURL"); // Not needed
@@ -387,7 +416,7 @@ public class PhotoLibraryService {
 
       if (i == queryResults.size() - 1) { // Last item
         completion.run(chunk, chunkNum, true);
-      } else if ((itemsInChunk > 0 && chunk.size() == itemsInChunk) || (chunkTimeSec > 0 && (SystemClock.elapsedRealtime() - chunkStartTime) >= chunkTimeSec*1000)) {
+      } else if ((itemsInChunk > 0 && chunk.size() == itemsInChunk) || (chunkTimeSec > 0 && (SystemClock.elapsedRealtime() - chunkStartTime) >= chunkTimeSec * 1000)) {
         completion.run(chunk, chunkNum, false);
         chunkNum += 1;
         chunk = new ArrayList<JSONObject>();
@@ -402,9 +431,9 @@ public class PhotoLibraryService {
 
     Cursor cursor = context.getContentResolver().query(
       MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-      new String[] { MediaStore.Images.ImageColumns.MIME_TYPE },
+      new String[]{MediaStore.Images.ImageColumns.MIME_TYPE},
       MediaStore.MediaColumns._ID + "=?",
-      new String[] {Integer.toString(imageId)}, null);
+      new String[]{Integer.toString(imageId)}, null);
 
     if (cursor != null && cursor.moveToFirst()) {
       String mimeType = cursor.getString(cursor.getColumnIndex(MediaStore.MediaColumns.MIME_TYPE));
@@ -447,7 +476,7 @@ public class PhotoLibraryService {
   private static byte[] getJpegBytesFromBitmap(Bitmap bitmap, double quality) {
 
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
-    bitmap.compress(Bitmap.CompressFormat.JPEG, (int)(quality * 100), stream);
+    bitmap.compress(Bitmap.CompressFormat.JPEG, (int) (quality * 100), stream);
 
     return stream.toByteArray();
 
@@ -507,7 +536,7 @@ public class PhotoLibraryService {
 
     switch (orientation) {
       case ExifInterface.ORIENTATION_NORMAL: // 1
-          return source;
+        return source;
       case ExifInterface.ORIENTATION_FLIP_HORIZONTAL: // 2
         matrix.setScale(-1, 1);
         break;
@@ -584,11 +613,11 @@ public class PhotoLibraryService {
 
   }
 
-  private Map<String, String> imageMimeToExtension = new HashMap<String, String>(){{
+  private Map<String, String> imageMimeToExtension = new HashMap<String, String>() {{
     put("jpeg", ".jpg");
   }};
 
-  private Map<String, String> videMimeToExtension = new HashMap<String, String>(){{
+  private Map<String, String> videMimeToExtension = new HashMap<String, String>() {{
     put("quicktime", ".mov");
     put("ogg", ".ogv");
   }};
@@ -637,7 +666,7 @@ public class PhotoLibraryService {
       InputStream is;
       FileOutputStream os = new FileOutputStream(targetFile);
 
-      if(url.startsWith("file:///android_asset/")) {
+      if (url.startsWith("file:///android_asset/")) {
         String assetUrl = url.replace("file:///android_asset/", "");
         is = cordova.getActivity().getApplicationContext().getAssets().open(assetUrl);
       } else {
@@ -673,5 +702,7 @@ public class PhotoLibraryService {
     void run(JSONObject result);
 
   }
+
+
 
 }

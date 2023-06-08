@@ -39,6 +39,8 @@ public class PhotoLibrary extends CordovaPlugin {
 
   public static final String ACTION_GET_LIBRARY = "getLibrary";
   public static final String ACTION_GET_ALBUMS = "getAlbums";
+  public static final String ACTION_GET_PHOTOS_FROM_ALBUM = "getPhotosFromAlbum";
+  public static final String ACTION_DELETE_PHOTOS_BY_ALBUM = "deletePhotosByAlbum";
   public static final String ACTION_GET_THUMBNAIL = "getThumbnail";
   public static final String ACTION_GET_PHOTO = "getPhoto";
   public static final String ACTION_STOP_CACHING = "stopCaching";
@@ -127,7 +129,56 @@ public class PhotoLibrary extends CordovaPlugin {
         });
         return true;
 
-      } else if (ACTION_GET_THUMBNAIL.equals(action)) {
+      } else if (ACTION_GET_PHOTOS_FROM_ALBUM.equals(action)) {
+        cordova.getThreadPool().execute(new Runnable() {
+          public void run() {
+            try {
+
+              if (!cordova.hasPermission(READ_EXTERNAL_STORAGE)) {
+                callbackContext.error(service.PERMISSION_ERROR);
+                return;
+              }
+
+              final String albumName = args.getString(0);
+
+              ArrayList<JSONObject> photoLibrary = service.getPhotosFromAlbum(getContext(),albumName );
+
+              callbackContext.success(createGetPhotosFromAlbumResult(photoLibrary));
+
+            } catch (Exception e) {
+              e.printStackTrace();
+              callbackContext.error(e.getMessage());
+            }
+          }
+        });
+        return true;
+
+      } else if (ACTION_DELETE_PHOTOS_BY_ALBUM.equals(action)) {
+        cordova.getThreadPool().execute(new Runnable() {
+          public void run() {
+            try {
+
+              if (!cordova.hasPermission(READ_EXTERNAL_STORAGE)) {
+                callbackContext.error(service.PERMISSION_ERROR);
+                return;
+              }
+
+              final String albumName = args.getString(0);
+
+              service.deletePhotosFromAlbum(getContext(),albumName);
+
+              callbackContext.success();
+
+            } catch (Exception e) {
+              e.printStackTrace();
+              callbackContext.error(e.getMessage());
+            }
+          }
+        });
+        return true;
+
+
+      }else if (ACTION_GET_THUMBNAIL.equals(action)) {
         cordova.getThreadPool().execute(new Runnable() {
           public void run() {
             try {
@@ -444,6 +495,10 @@ public class PhotoLibrary extends CordovaPlugin {
     result.put("isLastChunk", isLastChunk);
     result.put("library", new JSONArray(library));
     return result;
+  }
+
+  private static JSONArray createGetPhotosFromAlbumResult(ArrayList<JSONObject> library) throws JSONException {
+    return new JSONArray(library);
   }
 
 }
