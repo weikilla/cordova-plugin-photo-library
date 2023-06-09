@@ -97,11 +97,14 @@ public class PhotoLibraryService {
       put("nativeURL", MediaStore.MediaColumns.DATA); // will not be returned to javascript
     }};
 
-    String selection = MediaStore.Images.Media.BUCKET_DISPLAY_NAME + " = " + "\"" + albumName + "\"";
+    String selection = MediaStore.Files.FileColumns.MEDIA_TYPE + " IN (%s, %s) AND "
+      + MediaStore.Images.Media.BUCKET_DISPLAY_NAME + "=\"%s\"";
 
-    final ArrayList<JSONObject> queryResult = queryContentProvider(context, MediaStore.Images.Media.EXTERNAL_CONTENT_URI, columns, selection);
+    selection = String.format(selection,MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE,MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO,albumName);
 
-    return queryResult;
+    Uri externalContentUri = MediaStore.Files.getContentUri("external");
+
+    return queryContentProvider(context, externalContentUri, columns, selection);
 
   }
 
@@ -115,7 +118,7 @@ public class PhotoLibraryService {
 
     for (String photoPath : photosNativePath) {
       Uri photoUri = Uri.parse("file://" + photoPath);
-      context.getContentResolver().delete(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+      context.getContentResolver().delete(MediaStore.Files.getContentUri("external"),
         MediaStore.Images.Media.DATA + "=?", new String[]{photoPath});
       File photoFile = new File(photoUri.getPath());
       if (photoFile.exists()) {
