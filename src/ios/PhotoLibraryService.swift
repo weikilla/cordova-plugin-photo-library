@@ -612,65 +612,52 @@ final class PhotoLibraryService {
     // but first find a way to save animated gif with it.
     // TODO: should return library item
     func saveImage(_ url: String, album: String, completion: @escaping (_ libraryItem: NSDictionary?, _ error: String?)->Void) {
-
-        let sourceData: Data
-        do {
-            sourceData = try getDataFromURL(url)
-        } catch {
-            completion(nil, "\(error)")
-            return
-        }
-
-        let assetsLibrary = ALAssetsLibrary()
-
+        let fileURL = URL(string: url)!
+        let fileName = URL(string: url)!.lastPathComponent
         func saveImage(_ photoAlbum: PHAssetCollection) {
-            assetsLibrary.writeImageData(toSavedPhotosAlbum: sourceData, metadata: nil) { (assetUrl: URL?, error: Error?) in
-
+            var placeholderId: String?
+            PHPhotoLibrary.shared().performChanges({
+                let photoCreationRequest = PHAssetCreationRequest.forAsset()
+                let photoResourceOption = PHAssetResourceCreationOptions()
+                photoResourceOption.originalFilename = fileName
+                photoCreationRequest.addResource(with: .photo, fileURL: fileURL, options: photoResourceOption)
+                if let assetPlaceholder = photoCreationRequest.placeholderForCreatedAsset {
+                    let albumChangeRequest = PHAssetCollectionChangeRequest(for: photoAlbum)
+                    let enumeration: NSArray = [assetPlaceholder]
+                    albumChangeRequest?.addAssets(enumeration)
+                }
+                placeholderId = photoCreationRequest.placeholderForCreatedAsset?.localIdentifier
+            }) { (success, error) in
                 if error != nil {
-                    completion(nil, "Could not write image to album: \(error)")
+                    completion(nil, "Could not write image to photos and move it to album: \(String(describing: error))")
                     return
-                }
-
-                guard let assetUrl = assetUrl else {
-                    completion(nil, "Writing image to album resulted empty asset")
-                    return
-                }
-
-                self.putMediaToAlbum(assetsLibrary, url: assetUrl, album: album, completion: { (error) in
-                    if error != nil {
-                        completion(nil, error)
-                    } else {
-                        let fetchResult = PHAsset.fetchAssets(withALAssetURLs: [assetUrl], options: nil)
-                        var libraryItem: NSDictionary? = nil
-                        if fetchResult.count == 1 {
-                            let asset = fetchResult.firstObject
-                            if let asset = asset {
-                                libraryItem = self.assetToLibraryItem(asset: asset, useOriginalFileNames: false, includeAlbumData: true)
-                            }
+                }else{
+                    var libraryItem: NSDictionary? = nil
+                    let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: [placeholderId!], options: nil)
+                    if fetchResult.count == 1 {
+                        let asset = fetchResult.firstObject
+                        if let asset = asset {
+                            libraryItem = self.assetToLibraryItem(asset: asset, useOriginalFileNames: false, includeAlbumData: true)
                         }
-                        completion(libraryItem, nil)
                     }
-                })
-
+                    completion(libraryItem, nil)
+                    
+                }
             }
         }
-
+        
         if let photoAlbum = PhotoLibraryService.getPhotoAlbum(album) {
             saveImage(photoAlbum)
             return
         }
-
+        
         PhotoLibraryService.createPhotoAlbum(album) { (photoAlbum: PHAssetCollection?, error: String?) in
-
             guard let photoAlbum = photoAlbum else {
                 completion(nil, error)
                 return
             }
-
             saveImage(photoAlbum)
-
         }
-
     }
 
     func saveVideo(_ url: String, album: String, completion: @escaping (_ libraryItem: NSDictionary?, _ error: String?)->Void) {

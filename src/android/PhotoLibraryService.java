@@ -603,6 +603,8 @@ public class PhotoLibraryService {
     return result;
   }
 
+
+
   private void addFileToMediaLibrary(Context context, File file, final FilePathRunnable completion) {
 
     String filePath = file.getAbsolutePath();
@@ -662,9 +664,9 @@ public class PhotoLibraryService {
       os.close();
 
     } else {
-
-      String extension = url.contains(".") ? url.substring(url.lastIndexOf(".")) : "";
-      targetFile = getImageFileName(albumDirectory, extension);
+      String[] parts = url.split("/");
+      String fileNamePart = parts[parts.length - 1];
+      targetFile = new File(albumDirectory, fileNamePart);
 
       InputStream is;
       FileOutputStream os = new FileOutputStream(targetFile);
