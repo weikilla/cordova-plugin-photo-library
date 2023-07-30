@@ -1,7 +1,7 @@
 {
   "name": "cordova-plugin-photo-library",
   "version": "2.6.0",
-  "description": "Plugin that just gets photos from the gallery",
+  "description": "Plugin that interacting with the device for file and media",
   "main": "index.js",
   "scripts": {
     "test:android": "cordova-paramedic --platform android --plugin . --verbose",

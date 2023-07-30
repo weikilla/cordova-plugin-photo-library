@@ -235,7 +235,7 @@ public class PhotoLibraryService {
 
   }
 
-  public void saveImage(final Context context, final CordovaInterface cordova, final String url, String album, final JSONObjectRunnable completion)
+  public void saveMedia(final Context context, final CordovaInterface cordova, final String url, String album, final JSONObjectRunnable completion)
     throws IOException, URISyntaxException {
 
     saveMedia(context, cordova, url, album, imageMimeToExtension, new FilePathRunnable() {
@@ -248,17 +248,7 @@ public class PhotoLibraryService {
 
   }
 
-  public void saveVideo(final Context context, final CordovaInterface cordova, String url, String album)
-    throws IOException, URISyntaxException {
 
-    saveMedia(context, cordova, url, album, videMimeToExtension, new FilePathRunnable() {
-      @Override
-      public void run(String filePath) {
-        // TODO: call queryLibrary and return libraryItem of what was saved
-      }
-    });
-
-  }
 
   public class PictureData {
 

@@ -271,7 +271,7 @@ import WebKit
 
     }
 
-    @objc func saveImage(_ command: CDVInvokedUrlCommand) {
+    @objc func saveMedia(_ command: CDVInvokedUrlCommand) {
         concurrentQueue.async {
             if PHPhotoLibrary.authorizationStatus() != .authorized {
                 let pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: PhotoLibraryService.PERMISSION_ERROR)
@@ -286,7 +286,7 @@ import WebKit
 
             NSLog("album: %@, %@", album, url);
 
-            service.saveImage(url, album: album) { (libraryItem: NSDictionary?, error: String?) in
+            service.saveMedia(url, album: album) { (libraryItem: NSDictionary?, error: String?) in
                 if (error != nil) {
                     let pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: error)
                     self.commandDelegate!.send(pluginResult, callbackId: command.callbackId)
@@ -298,32 +298,6 @@ import WebKit
         }
     }
 
-    @objc func saveVideo(_ command: CDVInvokedUrlCommand) {
-        concurrentQueue.async {
-
-            if PHPhotoLibrary.authorizationStatus() != .authorized {
-                let pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: PhotoLibraryService.PERMISSION_ERROR)
-                self.commandDelegate!.send(pluginResult, callbackId: command.callbackId)
-                return
-            }
-
-            let service = PhotoLibraryService.instance
-
-            let url = command.arguments[0] as! String
-            let album = command.arguments[1] as! String
-
-
-            service.saveVideo(url, album: album) { (_ libraryItem: NSDictionary?, error: String?) in
-                if (error != nil) {
-                    let pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: error)
-                    self.commandDelegate!.send(pluginResult, callbackId: command.callbackId)
-                } else {
-                    let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: libraryItem as! [String: AnyObject]?)
-                    self.commandDelegate!.send(pluginResult, callbackId: command.callbackId    )
-                }
-            }
-
-        }
-    }
+  
 
 }

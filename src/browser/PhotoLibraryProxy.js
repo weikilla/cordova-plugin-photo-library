@@ -111,15 +111,11 @@ var photoLibraryProxy = {
     success();
   },
 
-  saveImage: function (success, error, [url, album]) {
+  saveMedia: function (success, error, [url, album]) {
     // TODO - implement saving on browser
     error('not implemented');
   },
 
-  saveVideo: function (success, error, [url, album]) {
-    // TODO - implement saving on browser
-    error('not implemented');
-  },
 
 };
 

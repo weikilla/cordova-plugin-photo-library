@@ -45,8 +45,7 @@ public class PhotoLibrary extends CordovaPlugin {
   public static final String ACTION_GET_PHOTO = "getPhoto";
   public static final String ACTION_STOP_CACHING = "stopCaching";
   public static final String ACTION_REQUEST_AUTHORIZATION = "requestAuthorization";
-  public static final String ACTION_SAVE_IMAGE = "saveImage";
-  public static final String ACTION_SAVE_VIDEO = "saveVideo";
+  public static final String ACTION_SAVE_Media = "saveMedia";
 
   public CallbackContext callbackContext;
 
@@ -254,7 +253,7 @@ public class PhotoLibrary extends CordovaPlugin {
         }
         return true;
 
-      } else if (ACTION_SAVE_IMAGE.equals(action)) {
+      } else if (ACTION_SAVE_Media.equals(action)) {
         cordova.getThreadPool().execute(new Runnable() {
           public void run() {
             try {
@@ -267,37 +266,12 @@ public class PhotoLibrary extends CordovaPlugin {
                 return;
               }
 
-              service.saveImage(getContext(), cordova, url, album, new PhotoLibraryService.JSONObjectRunnable() {
+              service.saveMedia(getContext(), cordova, url, album, new PhotoLibraryService.JSONObjectRunnable() {
                 @Override
                 public void run(JSONObject result) {
                   callbackContext.success(result);
                 }
               });
-
-            } catch (Exception e) {
-              e.printStackTrace();
-              callbackContext.error(e.getMessage());
-            }
-          }
-        });
-        return true;
-
-      } else if (ACTION_SAVE_VIDEO.equals(action)) {
-        cordova.getThreadPool().execute(new Runnable() {
-          public void run() {
-            try {
-
-              final String url = args.getString(0);
-              final String album = args.getString(1);
-
-              if (!cordova.hasPermission(WRITE_EXTERNAL_STORAGE)) {
-                callbackContext.error(service.PERMISSION_ERROR);
-                return;
-              }
-
-              service.saveVideo(getContext(), cordova, url, album);
-
-              callbackContext.success();
 
             } catch (Exception e) {
               e.printStackTrace();
